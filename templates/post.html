@@ -1,86 +1,278 @@
 {% extends "base.html" %}
 
+{% block title %}{% if post %}{{ post.title }}{% else %}Create Post{% endif %} - Blog Website{% endblock %}
+
+{% block extra_css %}
+<style>
+    .post-container {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    input[type="text"],
+    textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: border-color 0.3s ease;
+    }
+    
+    input:focus,
+    textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    textarea {
+        resize: vertical;
+        min-height: 300px;
+    }
+    
+    button {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .post-view {
+        margin-bottom: 2rem;
+    }
+    
+    .post-header {
+        border-bottom: 2px solid #eee;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .post-title {
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+    
+    .post-meta {
+        color: #999;
+        font-size: 0.9rem;
+    }
+    
+    .post-content {
+        color: #333;
+        line-height: 1.8;
+        margin-bottom: 2rem;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .post-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-edit {
+        background-color: #2196f3;
+        color: white;
+    }
+    
+    .btn-edit:hover {
+        background-color: #0b7dda;
+    }
+    
+    .btn-delete {
+        background-color: #f44336;
+        color: white;
+    }
+    
+    .btn-delete:hover {
+        background-color: #da190b;
+    }
+    
+    .comments-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 2px solid #eee;
+    }
+    
+    .comments-section h3 {
+        color: #333;
+        margin-bottom: 1.5rem;
+    }
+    
+    .comment {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+    }
+    
+    .comment-author {
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 0.25rem;
+    }
+    
+    .comment-date {
+        font-size: 0.9rem;
+        color: #999;
+        margin-bottom: 0.5rem;
+    }
+    
+    .comment-content {
+        color: #333;
+        line-height: 1.6;
+    }
+    
+    .no-comments {
+        color: #999;
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .errors {
+        color: #f44336;
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-  {% if post %} {# Viewing an existing post #}
-    <article class="post-full">
-      <h2>{{ post.title }}</h2>
-      <p class="post-meta">
-          Posted by {{ post.author.username }}
-          on {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}
-          {% if current_user.is_authenticated and current_user.id == post.author_id %}
-              | <a href="#">Edit</a> | <a href="#">Delete</a>
-          {% endif %}
-      </p>
-      <div class="post-content">
-          {{ post.content }}
-      </div>
-    </article>
-    <hr>
-
-    <section class="comments">
-      <h3>Comments ({{ comments|length }})</h3>
-      {% if current_user.is_authenticated %}
-        {# Display comment form only if logged in #}
-        <form method="POST" action="{{ url_for('view_post', post_id=post.id) }}">
+{% if post %}
+    <div class="post-view">
+        <div class="post-header">
+            <h1 class="post-title">{{ post.title }}</h1>
+            <div class="post-meta">
+                By <strong>{{ post.author.username }}</strong> on {{ post.date_posted.strftime('%B %d, %Y at %I:%M %p') }}
+                {% if post.updated_at != post.date_posted %}
+                    <br><small>(Updated: {{ post.updated_at.strftime('%B %d, %Y at %I:%M %p') }})</small>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if current_user.is_authenticated and current_user == post.author %}
+            <div class="post-actions">
+                <a href="{{ url_for('edit_post', post_id=post.id) }}" class="btn btn-edit">✏️ Edit Post</a>
+                <form method="POST" action="{{ url_for('delete_post', post_id=post.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                    <button type="submit" class="btn btn-delete">🗑️ Delete Post</button>
+                </form>
+            </div>
+        {% endif %}
+        
+        <div class="post-content">{{ post.content }}</div>
+        
+        <div class="comments-section">
+            <h3>💬 Comments ({{ comments|length }})</h3>
+            
+            {% if comments %}
+                {% for comment in comments %}
+                    <div class="comment">
+                        <div class="comment-author">{{ comment.user.username }}</div>
+                        <div class="comment-date">{{ comment.date_posted.strftime('%B %d, %Y at %I:%M %p') }}</div>
+                        <div class="comment-content">{{ comment.content }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-comments">No comments yet. Be the first to comment!</div>
+            {% endif %}
+            
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #eee;">
+                <h4 style="color: #333; margin-bottom: 1rem;">Add a Comment</h4>
+                
+                {% if current_user.is_authenticated %}
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        <div class="form-group">
+                            {{ form.content.label }}
+                            {{ form.content(style="width: 100%; min-height: 150px;") }}
+                            {% if form.content.errors %}
+                                <div class="errors">
+                                    {% for error in form.content.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {{ form.submit(class="btn") }}
+                    </form>
+                {% else %}
+                    <p style="color: #999;">You must be <a href="{{ url_for('login', next=url_for('view_post', post_id=post.id)) }}" style="color: #667eea;">logged in</a> to comment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="post-container">
+        <h1>{% if form.title.object_data %}Edit Post{% else %}Create New Post{% endif %}</h1>
+        
+        <form method="POST" novalidate>
             {{ form.hidden_tag() }}
-            <div>
-              {{ form.content.label }}<br>
-              {{ form.content(cols=60, rows=4) }}<br>
-              {% for error in form.content.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-              {% endfor %}
+            
+            <div class="form-group">
+                {{ form.title.label }}
+                {{ form.title(style="width: 100%;") }}
+                {% if form.title.errors %}
+                    <div class="errors">
+                        {% for error in form.title.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
-            <div>
-              {{ form.submit() }}
+            
+            <div class="form-group">
+                {{ form.content.label }}
+                {{ form.content(style="width: 100%; min-height: 400px;") }}
+                {% if form.content.errors %}
+                    <div class="errors">
+                        {% for error in form.content.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
+            
+            {{ form.submit() }}
         </form>
-        <hr>
-      {% else %}
-        <p><a href="{{ url_for('login', next=request.url) }}">Login</a> to add a comment.</p>
-        <hr>
-      {% endif %}
-
-      {# Display existing comments #}
-      {% if comments %}
-        {% for comment in comments %}
-            <article class="comment"> {# Use the structure from _comment.html #}
-              <p>
-                  <strong>{{ comment.user.username }}</strong>
-                  <small>on {{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}</small>
-                   {% if current_user.is_authenticated and current_user.id == comment.user_id %}
-                       | <a href="#">Delete</a>
-                   {% endif %}
-              </p>
-              <div>{{ comment.content }}</div>
-            </article>
-            <hr>
-        {% endfor %}
-      {% else %}
-          <p>No comments yet. Be the first!</p>
-      {% endif %}
-    </section>
-
-  {% else %} {# Creating a new post #}
-    <h2>New Post</h2>
-    <form method="POST" action="{{ url_for('create_post') }}">
-        {{ form.hidden_tag() }}
-        <div>
-          {{ form.title.label }}<br>
-          {{ form.title(size=40) }}<br>
-           {% for error in form.title.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-          {% endfor %}
-        </div>
-        <div>
-          {{ form.content.label }}<br>
-          {{ form.content(cols=60, rows=10) }}<br>
-           {% for error in form.content.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-          {% endfor %}
-        </div>
-        <div>
-          {{ form.submit() }}
-        </div>
-    </form>
-  {% endif %}
+    </div>
+{% endif %}
 {% endblock %}

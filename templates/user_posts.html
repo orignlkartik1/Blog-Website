@@ -1,9 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Blog Website{% endblock %}
+{% block title %}{{ user.username }}'s Posts - Blog Website{% endblock %}
 
 {% block extra_css %}
 <style>
+    .user-header {
+        background: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+    
+    .user-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .user-details h1 {
+        color: #333;
+        margin: 0 0 0.5rem 0;
+    }
+    
+    .user-details p {
+        color: #999;
+        margin: 0;
+    }
+    
     .posts-container {
         display: grid;
         gap: 2rem;
@@ -32,12 +68,6 @@
         color: #999;
         font-size: 0.9rem;
         margin-bottom: 1rem;
-    }
-    
-    .post-author {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
     }
     
     .post-content {
@@ -98,7 +128,18 @@
 {% endblock %}
 
 {% block content %}
-<h1>📚 Latest Blog Posts</h1>
+<div class="user-header">
+    <div class="user-info">
+        <div class="user-avatar">👤</div>
+        <div class="user-details">
+            <h1>{{ user.username }}</h1>
+            <p>📧 {{ user.email }}</p>
+            <p>📅 Member since {{ user.created_at.strftime('%B %Y') }}</p>
+        </div>
+    </div>
+</div>
+
+<h1>{{ user.username }}'s Blog Posts</h1>
 
 {% if posts.items %}
     <div class="posts-container">
@@ -106,8 +147,7 @@
             <div class="post-card">
                 <h2 class="post-title">{{ post.title }}</h2>
                 <div class="post-meta">
-                    By <a href="{{ url_for('user_posts', username=post.author.username) }}" class="post-author">{{ post.author.username }}</a>
-                    on {{ post.date_posted.strftime('%B %d, %Y at %I:%M %p') }}
+                    {{ post.date_posted.strftime('%B %d, %Y at %I:%M %p') }}
                 </div>
                 <div class="post-content">{{ post.content[:200] }}...</div>
                 <a href="{{ url_for('view_post', post_id=post.id) }}" class="read-more">Read More →</a>
@@ -118,7 +158,7 @@
     {% if posts.pages > 1 %}
         <div class="pagination">
             {% if posts.has_prev %}
-                <a href="{{ url_for('index', page=posts.prev_num) }}">← Previous</a>
+                <a href="{{ url_for('user_posts', username=user.username, page=posts.prev_num) }}">← Previous</a>
             {% endif %}
             
             {% for page_num in posts.iter_pages() %}
@@ -126,20 +166,20 @@
                     {% if page_num == posts.page %}
                         <span class="active">{{ page_num }}</span>
                     {% else %}
-                        <a href="{{ url_for('index', page=page_num) }}">{{ page_num }}</a>
+                        <a href="{{ url_for('user_posts', username=user.username, page=page_num) }}">{{ page_num }}</a>
                     {% endif %}
                 {% endif %}
             {% endfor %}
             
             {% if posts.has_next %}
-                <a href="{{ url_for('index', page=posts.next_num) }}">Next →</a>
+                <a href="{{ url_for('user_posts', username=user.username, page=posts.next_num) }}">Next →</a>
             {% endif %}
         </div>
     {% endif %}
 {% else %}
     <div class="empty-message">
         <h2>No posts yet</h2>
-        <p>{% if current_user.is_authenticated %}Be the first to <a href="{{ url_for('create_post') }}">create a post</a>!{% else %}Log in to create your first post.{% endif %}</p>
+        <p>{% if current_user == user %}<a href="{{ url_for('create_post') }}">Create your first post</a>{% else %}This user hasn't posted anything yet.{% endif %}</p>
     </div>
 {% endif %}
 {% endblock %}
