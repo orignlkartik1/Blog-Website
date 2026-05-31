@@ -9,6 +9,7 @@ from flask_login import (
     current_user,
     UserMixin  
 )
+from urllib.parse import urlparse
 from config import Config
 from forms import RegisterForm, LoginForm, PostForm, CommentForm
 from models import db, User, Post, Comment 
@@ -30,9 +31,17 @@ with app.app_context():
     print("Database tables created (if they didn't exist).")
 
 
+def is_safe_url(target):
+    """Validate that the target URL is safe for redirect"""
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(target)
+    return test_url.scheme in ('http', 'https') and ref_url.netloc == test_url.netloc
+
+
 @app.route('/')
 def index():
-    posts = db.session.scalars(db.select(Post).order_by(Post.date_posted.desc())).all()
+    page = request.args.get('page', 1, type=int)
+    posts = db.paginate(db.select(Post).order_by(Post.date_posted.desc()), page=page, per_page=10)
     return render_template('index.html', posts=posts, title="Home")
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -47,7 +56,12 @@ def register():
             flash('Username already exists. Please choose a different one.', 'warning')
             return render_template('register.html', form=form, title="Register")
 
-        user = User(username=form.username.data)
+        existing_email = db.session.scalar(db.select(User).where(User.email == form.email.data))
+        if existing_email:
+            flash('Email already registered. Please use a different one.', 'warning')
+            return render_template('register.html', form=form, title="Register")
+
+        user = User(username=form.username.data, email=form.email.data)
         user.set_password(form.password.data) 
         db.session.add(user)
         db.session.commit()
@@ -66,7 +80,10 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user)
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('index'))
+            # Validate the next URL to prevent open redirect attacks
+            if next_page and is_safe_url(next_page):
+                return redirect(next_page)
+            return redirect(url_for('index'))
         else:
             flash('Login failed. Check your username and password.', 'danger')
     return render_template('login.html', form=form, title="Login")
@@ -87,7 +104,7 @@ def create_post():
         db.session.add(post)
         db.session.commit()
         flash('Post created!', 'success')
-        return redirect(url_for('index'))
+        return redirect(url_for('view_post', post_id=post.id))
     return render_template('post.html', form=form, title="New Post", post=None, comments=None)
 
 @app.route('/post/<int:post_id>', methods=['GET', 'POST'])
@@ -117,6 +134,70 @@ def view_post(post_id):
     return render_template('post.html', post=post, comments=comments, form=form, title=post.title)
 
 
+@app.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_post(post_id):
+    """Edit an existing post (author only)"""
+    post = db.session.get(Post, post_id)
+    if not post:
+        abort(404)
+    
+    # Check authorization - only author can edit
+    if post.author != current_user:
+        abort(403)  # Forbidden
+    
+    form = PostForm()
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('Post updated successfully!', 'success')
+        return redirect(url_for('view_post', post_id=post.id))
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+    
+    return render_template('post.html', form=form, title="Edit Post", post=post, comments=None)
+
+
+@app.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    """Delete a post (author only)"""
+    post = db.session.get(Post, post_id)
+    if not post:
+        abort(404)
+    
+    # Check authorization - only author can delete
+    if post.author != current_user:
+        abort(403)  # Forbidden
+    
+    db.session.delete(post)
+    db.session.commit()
+    flash('Post deleted successfully!', 'success')
+    return redirect(url_for('index'))
+
+
+@app.route('/user/<string:username>')
+def user_posts(username):
+    """View all posts by a specific user"""
+    user = db.session.scalar(db.select(User).where(User.username == username))
+    if not user:
+        abort(404)
+    
+    page = request.args.get('page', 1, type=int)
+    posts = db.paginate(
+        db.select(Post).where(Post.author == user).order_by(Post.date_posted.desc()),
+        page=page,
+        per_page=10
+    )
+    return render_template('user_posts.html', user=user, posts=posts, title=f"{username}'s Posts")
+
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('errors/403.html'), 403
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('errors/404.html'), 404
@@ -127,4 +208,6 @@ def internal_error(error):
     return render_template('errors/500.html'), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use environment variable for debug mode
+    debug_mode = os.environ.get('FLASK_ENV') == 'development'
+    app.run(debug=debug_mode)
