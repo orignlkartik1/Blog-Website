@@ -1,0 +1,142 @@
+/* static/css/style.css */
+body {
+  font-family: sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+.container {
+  width: 80%;
+  margin: auto;
+  overflow: hidden;
+}
+
+header {
+  background: #333;
+  color: #fff;
+  padding-top: 10px;
+  min-height: 70px;
+  border-bottom: #77aaff 3px solid;
+}
+
+header h1 a {
+  color: #fff;
+  text-decoration: none;
+  text-transform: uppercase;
+  float: left;
+}
+
+header nav ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  float: right;
+  margin-top: 15px; /* Adjust as needed */
+}
+
+header nav ul li {
+  display: inline;
+  padding: 0 15px;
+}
+
+header nav ul li a {
+  color: #fff;
+  text-decoration: none;
+}
+
+header nav ul li a:hover {
+  color: #ccc;
+}
+
+
+main {
+  padding: 20px 0;
+  background-color: #fff;
+  min-height: 400px; /* Ensure footer doesn't jump up */
+}
+
+footer {
+  background: #333;
+  color: #fff;
+  text-align: center;
+  padding: 10px;
+  margin-top: 20px;
+}
+
+/* Forms */
+form div {
+  margin-bottom: 15px;
+}
+
+form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+form input[type="text"],
+form input[type="password"],
+form textarea {
+  width: 95%; /* Slightly less than 100% to avoid overflow */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  max-width: 500px; /* Limit width */
+}
+
+form input[type="submit"] {
+  background: #5599ff;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+form input[type="submit"]:hover {
+  background: #3377dd;
+}
+
+/* Posts and Comments */
+.post-summary, .post-full, .comment {
+  background: #fff;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid #eee;
+  border-radius: 5px;
+}
+
+.post-meta, .comment p small {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.post-content, .comment div {
+  margin-top: 10px;
+}
+
+hr {
+  border: 0;
+  height: 1px;
+  background: #ddd;
+  margin: 20px 0;
+}
+
+/* Flash Messages */
+.flashes {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
+}
+.alert {
+  padding: 15px;
+  margin-bottom: 10px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+.alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+.alert-info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; }
+.alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+.alert-danger { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }

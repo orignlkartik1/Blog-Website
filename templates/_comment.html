@@ -1,0 +1,13 @@
+{# templates/_comment.html #}
+<article class="comment">
+  <p>
+      <strong>{{ comment.user.username }}</strong> {# Use user.username #}
+      <small>on {{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}</small> {# Use date_posted #}
+       {% if current_user.is_authenticated and current_user.id == comment.user_id %}
+           | <a href="#">Delete</a>
+       {% endif %}
+  </p>
+  {# Use nl2br filter to respect newlines entered the textarea #}
+  <div>{{ comment.content | nl2br }}</div>
+</article>
+<hr>

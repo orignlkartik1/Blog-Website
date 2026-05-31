@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Blog Posts</h1>
+    {% if posts %}
+        {% for post in posts %}
+        <article class="post-summary">
+            <h2><a href="{{ url_for('view_post', post_id=post.id) }}">{{ post.title }}</a></h2>
+            <p class="post-meta">by {{ post.author.username }} on {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}</p>
+            
+            <p>{{ post.content[:200] }}{% if post.content|length > 200 %}...{% endif %}</p>
+            <a href="{{ url_for('view_post', post_id=post.id) }}">Read more</a>
+        </article>
+        <hr>
+        {% endfor %}
+    {% else %}
+        <p>No posts yet. Be the first to create one!</p>
+        {% if current_user.is_authenticated %}
+           <p><a href="{{ url_for('create_post') }}">Create New Post</a></p>
+        {% else %}
+           <p><a href="{{ url_for('login') }}">Login</a> or <a href="{{ url_for('register') }}">Register</a> to post.</p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

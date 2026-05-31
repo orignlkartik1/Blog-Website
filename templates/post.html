@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+  {% if post %} {# Viewing an existing post #}
+    <article class="post-full">
+      <h2>{{ post.title }}</h2>
+      <p class="post-meta">
+          Posted by {{ post.author.username }}
+          on {{ post.date_posted.strftime('%Y-%m-%d %H:%M') }}
+          {% if current_user.is_authenticated and current_user.id == post.author_id %}
+              | <a href="#">Edit</a> | <a href="#">Delete</a>
+          {% endif %}
+      </p>
+      <div class="post-content">
+          {{ post.content }}
+      </div>
+    </article>
+    <hr>
+
+    <section class="comments">
+      <h3>Comments ({{ comments|length }})</h3>
+      {% if current_user.is_authenticated %}
+        {# Display comment form only if logged in #}
+        <form method="POST" action="{{ url_for('view_post', post_id=post.id) }}">
+            {{ form.hidden_tag() }}
+            <div>
+              {{ form.content.label }}<br>
+              {{ form.content(cols=60, rows=4) }}<br>
+              {% for error in form.content.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+              {% endfor %}
+            </div>
+            <div>
+              {{ form.submit() }}
+            </div>
+        </form>
+        <hr>
+      {% else %}
+        <p><a href="{{ url_for('login', next=request.url) }}">Login</a> to add a comment.</p>
+        <hr>
+      {% endif %}
+
+      {# Display existing comments #}
+      {% if comments %}
+        {% for comment in comments %}
+            <article class="comment"> {# Use the structure from _comment.html #}
+              <p>
+                  <strong>{{ comment.user.username }}</strong>
+                  <small>on {{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}</small>
+                   {% if current_user.is_authenticated and current_user.id == comment.user_id %}
+                       | <a href="#">Delete</a>
+                   {% endif %}
+              </p>
+              <div>{{ comment.content }}</div>
+            </article>
+            <hr>
+        {% endfor %}
+      {% else %}
+          <p>No comments yet. Be the first!</p>
+      {% endif %}
+    </section>
+
+  {% else %} {# Creating a new post #}
+    <h2>New Post</h2>
+    <form method="POST" action="{{ url_for('create_post') }}">
+        {{ form.hidden_tag() }}
+        <div>
+          {{ form.title.label }}<br>
+          {{ form.title(size=40) }}<br>
+           {% for error in form.title.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+          {% endfor %}
+        </div>
+        <div>
+          {{ form.content.label }}<br>
+          {{ form.content(cols=60, rows=10) }}<br>
+           {% for error in form.content.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+          {% endfor %}
+        </div>
+        <div>
+          {{ form.submit() }}
+        </div>
+    </form>
+  {% endif %}
+{% endblock %}
