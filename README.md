@@ -8,9 +8,9 @@ This is a feature-rich blog platform that allows users to create, read, and mana
 
 ## 🛠️ Technology Stack
 
-- **Backend**: Python (45.9%)
-- **Frontend**: HTML (40.5%)
-- **Styling**: CSS (13.6%)
+- **Backend**: Python (57.3%)
+- **Frontend**: HTML (32%)
+- **Styling**: CSS (10.7%)
 
 ## ✨ Features
 
